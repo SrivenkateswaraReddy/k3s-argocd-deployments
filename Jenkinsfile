@@ -6,13 +6,13 @@ pipeline {
     parameters {
         string(name: 'GIT_REPO', defaultValue: 'https://github.com/SrivenkateswaraReddy/k3s-argocd-deployments.git', description: 'Git repo with ArgoCD manifests')
         string(name: 'GIT_BRANCH', defaultValue: 'main', description: 'Git branch to checkout')
-        string(name: 'ARGOCD_APP', defaultValue: 'my-app', description: 'ArgoCD application name to sync')
+        string(name: 'ARGOCD_APP', defaultValue: 'metalb-app', description: 'ArgoCD application name to sync')
         string(name: 'ARGOCD_SERVER_PORT', defaultValue: '8005', description: 'Local port for ArgoCD port-forwarding')
         string(name: 'ARGOCD_USER', defaultValue: 'admin', description: 'ArgoCD username')
     }
     environment {
         ARGOCD_PASSWORD = credentials('argocd-password')  // Jenkins Credentials ID for ArgoCD admin password
-        PATH = "/tmp:$PATH"  // Include /tmp in PATH where argocd binary will be placed
+        PATH = "/usr/local/bin:$PATH"  // Ensure system-wide path for argocd
     }
     stages {
         stage('Checkout') {
@@ -25,10 +25,12 @@ pipeline {
                 script {
                     if (sh(script: 'command -v argocd', returnStatus: true) != 0) {
                         sh '''
-                            echo "Downloading ArgoCD CLI..."
-                            curl -sSL -o /tmp/argocd https://github.com/argoproj/argo-cd/releases/latest/download/argocd-linux-arm64
-                            chmod +x /tmp/argocd
+                            echo "Downloading ArgoCD CLI for ARM64..."
+                            curl -sSL -o argocd https://github.com/argoproj/argo-cd/releases/latest/download/argocd-linux-arm64
+                            chmod +x argocd
+                            sudo mv argocd /usr/local/bin/argocd
                         '''
+                        sh 'argocd version || echo "ArgoCD CLI installation failed."'
                     } else {
                         echo 'ArgoCD CLI already installed.'
                     }
@@ -64,7 +66,8 @@ pipeline {
                 script {
                     def server = "localhost:${params.ARGOCD_SERVER_PORT}"
                     echo "Logging into ArgoCD at ${server}..."
-                    sh "argocd login ${server} --username ${params.ARGOCD_USER} --password ${env.ARGOCD_PASSWORD} --insecure"
+                    sh 'argocd version'  // Check again if installed
+                    sh "argocd login ${server} --username ${params.ARGOCD_USER} --password '${env.ARGOCD_PASSWORD}' --insecure"
                 }
             }
         }
@@ -86,4 +89,3 @@ pipeline {
         }
     }
 }
-
