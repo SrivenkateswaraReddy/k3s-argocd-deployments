@@ -1,0 +1,21 @@
+controller:
+  image:
+    tag: v0.15.2
+
+speaker:
+  image:
+    tag: v0.15.2
+
+configInline:
+  address-pools:
+  - name: default
+    protocol: layer2
+    addresses:
+    - 192.168.1.240-192.168.1.250
+
+# configInline:
+#   address-pools:
+#   - name: default
+#     protocol: layer2
+#     addresses:
+#     - 192.168.1.240-192.168.1.250

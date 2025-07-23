@@ -1,0 +1,81 @@
+pipeline {
+  agent any
+
+  parameters {
+    string(name: 'GIT_REPO', defaultValue: 'https://github.com/youruser/k3s-argo-deployments.git', description: 'Git repo with ArgoCD apps')
+    string(name: 'GIT_BRANCH', defaultValue: 'main', description: 'Git branch')
+    string(name: 'APP_NAME', defaultValue: 'metalb', description: 'ArgoCD Application name')
+    string(name: 'APP_NAMESPACE', defaultValue: 'argocd', description: 'Namespace for ArgoCD app manifest')
+    string(name: 'APP_PATH', defaultValue: 'apps/metalb', description: 'Path inside repo for app')
+    string(name: 'HELM_RELEASE_NAME', defaultValue: 'metallb', description: 'Helm release name')
+    string(name: 'HELM_CHART_NAME', defaultValue: 'metallb', description: 'Helm chart name')
+    string(name: 'HELM_REPO_URL', defaultValue: 'https://metallb.github.io/metallb', description: 'Helm chart repo URL')
+    string(name: 'DEST_NAMESPACE', defaultValue: 'metallb-system', description: 'Kubernetes target namespace')
+  }
+
+  environment {
+    ARGO_APP_FILE = "argocd/${params.APP_NAME}-app.yaml"
+  }
+
+  stages {
+    stage('Checkout') {
+      steps {
+        git branch: "${params.GIT_BRANCH}", url: "${params.GIT_REPO}"
+      }
+    }
+
+    stage('Generate ArgoCD Application') {
+      steps {
+        script {
+          def argocdYaml = """
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: ${params.APP_NAME}
+  namespace: ${params.APP_NAMESPACE}
+spec:
+  project: default
+  source:
+    repoURL: ${params.GIT_REPO}
+    targetRevision: ${params.GIT_BRANCH}
+    path: ${params.APP_PATH}
+    helm:
+      releaseName: ${params.HELM_RELEASE_NAME}
+      valueFiles:
+        - values.yaml
+      chart: ${params.HELM_CHART_NAME}
+      repoURL: ${params.HELM_REPO_URL}
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: ${params.DEST_NAMESPACE}
+  syncPolicy:
+    automated:
+      selfHeal: true
+      prune: true
+"""
+          writeFile file: env.ARGO_APP_FILE, text: argocdYaml
+        }
+      }
+    }
+
+    stage('Commit & Push') {
+      steps {
+        sh """
+          git config user.name "jenkins"
+          git config user.email "jenkins@ci"
+          git add ${env.ARGO_APP_FILE}
+          git commit -m "Auto-update ArgoCD app for ${params.APP_NAME}"
+          git push origin ${params.GIT_BRANCH}
+        """
+      }
+    }
+  }
+    post {
+        success {
+        echo "ArgoCD application ${params.APP_NAME} updated successfully."
+        }
+        failure {
+        echo "Failed to update ArgoCD application ${params.APP_NAME}."
+        }
+    }
+    }   
