@@ -7,11 +7,12 @@ pipeline {
         string(name: 'GIT_REPO', defaultValue: 'https://github.com/SrivenkateswaraReddy/k3s-argocd-deployments.git', description: 'Git repo with ArgoCD manifests')
         string(name: 'GIT_BRANCH', defaultValue: 'main', description: 'Git branch to checkout')
         string(name: 'ARGOCD_APP', defaultValue: 'my-app', description: 'ArgoCD application name to sync')
-        string(name: 'ARGOCD_SERVER_PORT', defaultValue: '8090', description: 'Local port for ArgoCD port-forwarding')
+        string(name: 'ARGOCD_SERVER_PORT', defaultValue: '8005', description: 'Local port for ArgoCD port-forwarding')
         string(name: 'ARGOCD_USER', defaultValue: 'admin', description: 'ArgoCD username')
     }
     environment {
-        ARGOCD_PASSWORD = credentials('argocd-password')  // Use Jenkins credential ID here
+        ARGOCD_PASSWORD = credentials('argocd-password')  // Jenkins Credentials ID for ArgoCD admin password
+        PATH = "/tmp:$PATH"  // Include /tmp in PATH where argocd binary will be placed
     }
     stages {
         stage('Checkout') {
@@ -24,8 +25,9 @@ pipeline {
                 script {
                     if (sh(script: 'command -v argocd', returnStatus: true) != 0) {
                         sh '''
-                            curl -sSL -o /usr/local/bin/argocd https://github.com/argoproj/argo-cd/releases/latest/download/argocd-linux-arm64
-                            chmod +x /usr/local/bin/argocd
+                            echo "Downloading ArgoCD CLI..."
+                            curl -sSL -o /tmp/argocd https://github.com/argoproj/argo-cd/releases/latest/download/argocd-linux-arm64
+                            chmod +x /tmp/argocd
                         '''
                     } else {
                         echo 'ArgoCD CLI already installed.'
@@ -61,6 +63,7 @@ pipeline {
             steps {
                 script {
                     def server = "localhost:${params.ARGOCD_SERVER_PORT}"
+                    echo "Logging into ArgoCD at ${server}..."
                     sh "argocd login ${server} --username ${params.ARGOCD_USER} --password ${env.ARGOCD_PASSWORD} --insecure"
                 }
             }
@@ -68,6 +71,7 @@ pipeline {
         stage('Sync Application') {
             steps {
                 script {
+                    echo "Syncing ArgoCD app: ${params.ARGOCD_APP}"
                     sh "argocd app sync ${params.ARGOCD_APP}"
                 }
             }
@@ -82,3 +86,4 @@ pipeline {
         }
     }
 }
+
