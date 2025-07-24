@@ -12,8 +12,6 @@ pipeline {
         string(name: 'ARGOCD_SERVER_PORT', defaultValue: '8005',                                                         description: 'Local port for Argo CD port-forwarding')
     }
 
-    /* Keep secrets out of the global environment so the CLI can be called
-       without triggering the Groovy-string–interpolation warning. */
     environment {
         PATH = "/usr/local/bin:$PATH"
     }
@@ -65,18 +63,15 @@ pipeline {
             }
         }
 
-        stage('Argo CD login (token)') {
+        stage('Argo CD login (username/password)') {
             steps {
-                /* Pull the token only for the commands that need it. */
-                withCredentials([string(credentialsId: 'argocd-token', variable: 'ARGO_TOKEN')]) {
+                withCredentials([usernamePassword(credentialsId: 'argocd-creds', usernameVariable: 'ARGOCD_USER', passwordVariable: 'ARGOCD_PASSWORD')]) {
                     script {
                         def server = "localhost:${params.ARGOCD_SERVER_PORT}"
-                        echo "Logging into Argo CD at ${server} using token…"
+                        echo "Logging into Argo CD at ${server} using username and password..."
                         sh """
-                            #!/usr/bin/env bash
                             set -e
-                            # \$ARGO_TOKEN is provided by withCredentials and masked by Jenkins.
-                            argocd login ${server} --grpc-web --auth-token \$ARGO_TOKEN --insecure
+                            argocd login ${server} --username \$ARGOCD_USER --password \$ARGOCD_PASSWORD --insecure
                         """
                     }
                 }
