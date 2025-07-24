@@ -1,18 +1,17 @@
 pipeline {
     agent any
     options {
-        timeout(time: 30, unit: 'MINUTES')  // Timeout for the entire pipeline
+        timeout(time: 30, unit: 'MINUTES')
     }
     parameters {
         string(name: 'GIT_REPO', defaultValue: 'https://github.com/SrivenkateswaraReddy/k3s-argocd-deployments.git', description: 'Git repo with ArgoCD manifests')
         string(name: 'GIT_BRANCH', defaultValue: 'main', description: 'Git branch to checkout')
         string(name: 'ARGOCD_APP', defaultValue: 'metalb-app', description: 'ArgoCD application name to sync')
         string(name: 'ARGOCD_SERVER_PORT', defaultValue: '8005', description: 'Local port for ArgoCD port-forwarding')
-        string(name: 'ARGOCD_USER', defaultValue: 'admin', description: 'ArgoCD username')
     }
     environment {
-        ARGOCD_PASSWORD = credentials('argocd-password')  // Jenkins Credentials ID for ArgoCD admin password
-        PATH = "/usr/local/bin:$PATH"  // Ensure system-wide path for argocd
+        ARGOCD_AUTH_TOKEN = credentials('argocd-token')  // Jenkins Secret Text containing ArgoCD token
+        PATH = "/usr/local/bin:$PATH"
     }
     stages {
         stage('Checkout') {
@@ -61,13 +60,12 @@ pipeline {
                 }
             }
         }
-        stage('ArgoCD Login') {
+        stage('ArgoCD Login Using Token') {
             steps {
                 script {
                     def server = "localhost:${params.ARGOCD_SERVER_PORT}"
-                    echo "Logging into ArgoCD at ${server}..."
-                    sh 'argocd version'  // Check again if installed
-                    sh "argocd login ${server} --username ${params.ARGOCD_USER} --password '${env.ARGOCD_PASSWORD}' --insecure"
+                    echo "Logging into ArgoCD at ${server} using token..."
+                    sh "argocd login ${server} --auth-token ${env.ARGOCD_AUTH_TOKEN} --insecure"
                 }
             }
         }
@@ -83,9 +81,7 @@ pipeline {
     post {
         always {
             echo "Cleaning up port-forward process..."
-            sh '''
-                pkill -f "kubectl -n argocd port-forward svc/argocd-server" || true
-            '''
+            sh 'pkill -f "kubectl -n argocd port-forward svc/argocd-server" || true'
         }
     }
 }
