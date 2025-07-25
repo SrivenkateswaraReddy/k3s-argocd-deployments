@@ -65,7 +65,7 @@ pipeline {
 
         stage('Argo CD login (username/password)') {
             steps {
-                withCredentials([usernamePassword(credentialsId: 'argocd-creds', usernameVariable: 'ARGOCD_USER', passwordVariable: 'ARGOCD_PASSWORD')]) {
+                withCredentials([usernamePassword(credentialsId: 'argocd-jenkins-creds', usernameVariable: 'ARGOCD_USER', passwordVariable: 'ARGOCD_PASSWORD')]) {
                     script {
                         def server = "localhost:${params.ARGOCD_SERVER_PORT}"
                         echo "Logging into Argo CD at ${server} using username and password..."
