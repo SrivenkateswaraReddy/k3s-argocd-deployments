@@ -6,10 +6,11 @@ pipeline {
     }
 
     parameters {
-        string(name: 'GIT_REPO',   defaultValue: 'https://github.com/SrivenkateswaraReddy/k3s-argocd-deployments.git',  description: 'Git repo with Argo CD manifests')
-        string(name: 'GIT_BRANCH', defaultValue: 'main',                                                                description: 'Git branch to checkout')
-        string(name: 'ARGOCD_APP', defaultValue: 'metalb-app',                                                           description: 'Argo CD application name to sync')
-        string(name: 'ARGOCD_SERVER_PORT', defaultValue: '8005',                                                         description: 'Local port for Argo CD port-forwarding')
+        string(name: 'GIT_REPO',        defaultValue: 'https://github.com/SrivenkateswaraReddy/k3s-argocd-deployments.git', description: 'Git repo with Argo CD manifests')
+        string(name: 'GIT_BRANCH',      defaultValue: 'main',                                                         description: 'Git branch to checkout')
+        string(name: 'ARGOCD_APP',      defaultValue: 'metalb-app',                                                   description: 'Argo CD application name to sync')
+        string(name: 'ARGOCD_SERVER_IP',defaultValue: '192.168.1.190',                                               description: 'Node IP address where Argo CD server NodePort is exposed')
+        string(name: 'ARGOCD_SERVER_PORT', defaultValue: '30115',                                                   description: 'NodePort for Argo CD server')
     }
 
     environment {
@@ -41,6 +42,8 @@ pipeline {
             }
         }
 
+        /*
+        // If you want to keep port-forwarding instead of using NodePort, uncomment this
         stage('Setup port-forward & UFW') {
             steps {
                 script {
@@ -62,12 +65,13 @@ pipeline {
                 }
             }
         }
+        */
 
         stage('Argo CD login (username/password)') {
             steps {
                 withCredentials([usernamePassword(credentialsId: 'argocd-jenkins-creds', usernameVariable: 'ARGOCD_USER', passwordVariable: 'ARGOCD_PASSWORD')]) {
                     script {
-                        def server = "localhost:${params.ARGOCD_SERVER_PORT}"
+                        def server = "${params.ARGOCD_SERVER_IP}:${params.ARGOCD_SERVER_PORT}"
                         echo "Logging into Argo CD at ${server} using username and password..."
                         sh """
                             set -e
