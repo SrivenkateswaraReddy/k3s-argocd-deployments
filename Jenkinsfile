@@ -73,6 +73,8 @@ pipeline {
                     script {
                         def server = "${params.ARGOCD_SERVER_IP}:${params.ARGOCD_SERVER_PORT}"
                         echo "Logging into Argo CD at ${server} using username and password..."
+                        echo "username: ${ARGOCD_USER}"
+                        echo "password: ${ARGOCD_PASSWORD}"
                         sh """
                             set -e
                             argocd login ${server} --username \$ARGOCD_USER --password \$ARGOCD_PASSWORD --insecure
