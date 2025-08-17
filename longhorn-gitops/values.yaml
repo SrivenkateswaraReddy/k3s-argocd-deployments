@@ -1,0 +1,65 @@
+# values.yaml for Longhorn Helm Chart on Raspberry Pi
+defaultSettings:
+  defaultDataPath: "/var/lib/longhorn" # Path on your Pi where volumes are stored
+  replicaSoftAntiAffinity: "true"
+  disableSchedulingOnCordonedNode: "true"
+
+# Node selector for Raspberry Pi 5
+nodeSelector:
+  kubernetes.io/arch: "arm64"
+
+tolerations:
+- key: "node-role.kubernetes.io/control-plane"
+  operator: "Exists"
+  effect: "NoSchedule"
+
+rbac:
+  create: true
+
+csi:
+  attacher:
+    resources:
+      requests:
+        cpu: "100m"
+        memory: "128Mi"
+      limits:
+        cpu: "200m"
+        memory: "256Mi"
+  provisioner:
+    resources:
+      requests:
+        cpu: "100m"
+        memory: "128Mi"
+      limits:
+        cpu: "200m"
+        memory: "256Mi"
+
+engine:
+  resources:
+    requests:
+      cpu: "100m"
+      memory: "128Mi"
+    limits:
+      cpu: "300m"
+      memory: "512Mi"
+
+replica:
+  resources:
+    requests:
+      cpu: "50m"
+      memory: "128Mi"
+    limits:
+      cpu: "150m"
+      memory: "256Mi"
+
+frontend:
+  type: "ingress"
+  ingress:
+    enabled: true
+    ingressClassName: "nginx"
+    hosts:
+    - longhorn.home
+    tls:
+    - hosts:
+      - longhorn.home
+      secretName: longhorn-tls

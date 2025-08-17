@@ -1,0 +1,21 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: longhorn
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: 'https://github.com/SrivenkateswaraReddy/k3s-argocd-deployments.git'
+    targetRevision: feature/longhorn-gitops  # branch name
+    path: longhorn-gitops           # points to the folder with Helm values and manifests
+    helm:
+      valueFiles:
+        - values.yaml
+  destination:
+    server: 'https://kubernetes.default.svc'
+    namespace: longhorn-system
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
