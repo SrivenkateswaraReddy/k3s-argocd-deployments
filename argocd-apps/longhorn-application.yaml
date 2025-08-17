@@ -5,17 +5,26 @@ metadata:
   namespace: argocd
 spec:
   project: default
-  source:
-    repoURL: 'https://github.com/SrivenkateswaraReddy/k3s-argocd-deployments.git'
-    targetRevision: feature/longhorn-gitops  # branch name
-    path: longhorn-gitops           # points to the folder with Helm values and manifests
-    helm:
-      valueFiles:
-        - values.yaml
   destination:
-    server: 'https://kubernetes.default.svc'
+    server: https://kubernetes.default.svc
     namespace: longhorn-system
+  sources:
+    - chart: longhorn
+      repoURL: https://charts.longhorn.io/
+      targetRevision: v1.9.1
+      helm:
+        values: |
+          preUpgradeChecker:
+            jobEnabled: false
+    - repoURL: 'https://github.com/SrivenkateswaraReddy/k3s-argocd-deployments.git'
+      targetRevision: feature/longhorn-gitops
+      path: longhorn-gitops
+      helm:
+        valueFiles:
+          - values.yaml
   syncPolicy:
     automated:
       prune: true
       selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
