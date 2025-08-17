@@ -1,0 +1,81 @@
+affinity: {}
+clusterRoleBinding:
+  annotations: {}
+  clusterRoleName: cluster-admin
+  create: true
+config:
+  baseURL: ""
+  extraArgs: []
+  inCluster: true
+  oidc:
+    clientID: ""
+    clientSecret: ""
+    externalSecret:
+      enabled: false
+      name: ""
+    issuerURL: ""
+    scopes: ""
+    secret:
+      create: true
+      name: oidc
+    useAccessToken: false
+    validatorClientID: ""
+    validatorIssuerURL: ""
+  pluginsDir: /headlamp/plugins
+  watchPlugins: false
+deploymentAnnotations: {}
+extraManifests: []
+fullnameOverride: ""
+image:
+  pullPolicy: IfNotPresent
+  registry: ghcr.io
+  repository: headlamp-k8s/headlamp
+  tag: ""
+imagePullSecrets: []
+ingress:
+  annotations: {}
+  enabled: false
+  hosts: []
+  ingressClassName: ""
+  labels: {}
+  tls: []
+initContainers: []
+nameOverride: ""
+nodeSelector: {}
+persistentVolumeClaim:
+  accessModes: []
+  annotations: {}
+  enabled: false
+  selector: {}
+  size: ""
+  storageClassName: ""
+  volumeMode: ""
+pluginsManager:
+  baseImage: node:lts-alpine
+  configContent: ""
+  configFile: plugin.yml
+  enabled: false
+  version: latest
+podAnnotations: {}
+podSecurityContext: {}
+replicaCount: 1
+resources: {}
+securityContext:
+  privileged: false
+  runAsGroup: 101
+  runAsNonRoot: true
+  runAsUser: 100
+service:
+  clusterIP: ""
+  loadBalancerIP: ""
+  loadBalancerSourceRanges: []
+  nodePort: null
+  port: 80
+  type: ClusterIP
+serviceAccount:
+  annotations: {}
+  create: true
+  name: ""
+tolerations: []
+volumeMounts: []
+volumes: []
